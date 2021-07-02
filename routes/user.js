@@ -15,82 +15,87 @@ var router = express.Router()
 
 /********************************************************/
 /*** Un middleware pour logger la date sur les requêtes */
-router.use(function timeLog(req, res, next){
+router.use(function timeLog(req, res, next) {
     const event = new Date()
     console.log('USER Time :', event.toString())
     next()
+
+    //req.header.url
 })
 
 /**********************************/
 /*** Routage de la ressource User */
-router.get('/index', checkTokenMiddleware, (req, res) => {
+router.get('', checkTokenMiddleware, (req, res) => {
     User.findAll()
-        .then(users => {
-            return res.json({ data: users})
-        })
-        .catch(err => res.json({ message: 'Database error', error: err}))
-    
+        .then(users => res.json({ data: users }))
+        .catch(err => res.status(500).json({ message: `Database Error`, error: err }))
 })
 
-router.post('/add', (req, res) => {
-    const {nom, prenom, username, password} = req.body
+router.put('', checkTokenMiddleware, (req, res) => {
+    const { nom, prenom, username, password } = req.body
 
     // Vérification des données en reçues
-    if(!nom || !prenom || !username || !password){
-        return res.status(400).json({ message: 'Il manque un paramètre'})
+    if (!nom || !prenom || !username || !password) {
+        return res.status(400).json({ message: `Missing Data` })
     }
 
-    // Verification si l'utilisateur existe déjà
     User.findOne({ where: { username: username }, raw: true })
         .then(user => {
-            if(user !== null){
-                return res.status(400).json({ message: 'Ce compte existe déjà !'})
+            // Vérification si l'utilisateur existe déjà
+            if (user !== null) {
+                return res.status(409).json({ message: `The user ${nom} already exists !` })
             }
 
             // Hashage du mot de passe
             bcrypt.hash(req.body.password, parseInt(process.env.BCRYPT_SALT_ROUND))
-            .then(hash => {
-                // On a reçu le mot de passe hashé on peut enregistrer le nouveau compte
-                req.body.password = hash
+                .then(hash => {
+                    // On a reçu le mot de passe hashé on peut enregistrer le nouveau compte
+                    req.body.password = hash
 
-                User.create(req.body)
-                .then(user => res.json({ message: 'User created', user: user}))
-                .catch(err => res.json({ message: 'Database error', error: err}))
-            })
-            .catch(err => res.json({ message: 'Password hash error', error: err }))
-            
-        })        
-        .catch(err => res.json({ message: 'Database error', error: err}))
+                    User.create(req.body)
+                        .then(user => res.json({ message: `User ${nom} Created !`, user: user }))
+                        .catch(err => res.status(500).json({ message: `Database Error`, error: err }))
+                })
+                .catch(err => res.status(500).json({ message: `Password Hash Process Error`, error: err }))
+
+        })
+        .catch(err => res.status(500).json({ message: `Database Error`, error: err }))
 })
 
-router.put('/edit', (req, res) => {
-    // Vérifier si le champ id est présent
-    if(!req.body.id){
-        return res.status(400).json({ message: 'Informations manquantes'})
+router.patch('/:id', checkTokenMiddleware, (req, res) => {
+    let userId = parseInt(req.params.id)
+
+    // Vérifier si le champ id est présent et cohérent
+    if (!userId) {
+        return res.status(400).json({ message: `Missing Parameter` })
     }
 
-    // Vérifier si il existe dans la table user
-    User.findOne({ where: { id: req.body.id }, raw: true})
+    // Vérifier si l'utilisateur existe bien
+    User.findOne({ where: { id: userId }, raw: true })
         .then(user => {
-            if(user === null){
-                return res.status(400).json({ message: 'Utilisateur introuvable'})
+            if (user === null) {
+                return res.status(404).json({ message: `This user does not exist` })
             }
 
-            User.update(req.body, {
-                where: { id: req.body.id}
-              })
-              .then(user => res.json({ message: 'User updated', data: user}))
-              .catch(err => res.json({ message: 'Database error', error: err}))
+            // Mise à jour de l'utilisateur
+            User.update(req.body, { where: { id: userId } })
+                .then(user => res.json({ message: `User Updated`, data: user }))
+                .catch(err => res.status(500).json({ message: `Database Error`, error: err }))
         })
-        .catch(err => res.json({ message: 'Database error', error: err}))
+        .catch(err => res.status(500).json({ message: `Database Error`, error: err }))
 })
 
-router.delete('/delete/:user_id', (req, res) => {
-    User.destroy({ where: { id: req.params.user_id } })
-        .then(() => {
-            return res.json({ message: 'User deleted'})
-        })
-        .catch(err => res.json({ message: 'Database error', error: err}))
+router.delete('/:id', checkTokenMiddleware, (req, res) => {
+    let userId = parseInt(req.params.id)
+
+    // Vérifier si le champ id est présent et cohérent
+    if (!userId) {
+        return res.status(400).json({ message: `Missing Parameter` })
+    }
+
+    User.destroy({ where: { id: userId } })
+        .then(() => res.status(204).json({ message: `User Deleted` }))
+        .catch(err => res.status(500).json({ message: `Database Error`, error: err }))
 })
 
 module.exports = router

@@ -30,7 +30,7 @@ Api-Cocktail utilise les plugins/modules suivants
 | Nodemon | Pas besoin d'expliquer ;) |
 
 # Avant tout
-Penser à renomer le fichier .env.exemple en .env et d'y mettre ses propres paramètres
+Penser à renomer le fichier .env.exemple en .env et d'y mettre vos propres paramètres
 
 # Pré-requis
 Une base de donnée Mysql/MariaDb

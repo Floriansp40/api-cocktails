@@ -21,7 +21,7 @@ var sequelize = new Sequelize(
 
 /*******************************************************/
 /*** Synchornisation des modèles vers la BDD si besoin */
-//sequelize.sync()
+sequelize.sync()
 
 
 module.exports = sequelize
