@@ -25,6 +25,15 @@ router.use(function timeLog(req, res, next) {
 
 /**********************************/
 /*** Routage de la ressource User */
+/**
+ * @swagger
+ * /users:
+ *  get:
+ *    description: Use to request all users
+ *    responses:
+ *      '200':
+ *        description: A successful response
+ */
 router.get('', checkTokenMiddleware, (req, res) => {
     User.findAll()
         .then(users => res.json({ data: users }))

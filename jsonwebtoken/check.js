@@ -23,13 +23,13 @@ const checkTokenMiddleware = (req, res, next) => {
 
     // Si il n'y a aucun token dans l'entête
     if (!token) {
-        res.status(401).json({ message: `The is no identification` })
+        return res.status(401).json({ message: `You are not identified !` })
     }
 
     // Vérification de la validité du token
     jwt.verify(token, process.env.JWT_SECRET, (err, decodedToken) => {
         if (err) {
-            res.status(401).json({ message: `This token is outdated` })
+            return res.status(401).json({ message: `This token is outdated` })
         } else {
             next()
         }
